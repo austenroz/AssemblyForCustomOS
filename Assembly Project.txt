@@ -1,0 +1,278 @@
+//Developed by Austen Rozanski
+//Created       4/10/2017
+//Last Updated  4/28/2017
+
+//Program Description:
+// Multiply two numbers between 1 and 99 received from
+// input. Output the result.
+
+ORG 100 //Program starts at addr 100
+BUN STEP1
+
+///////////////////////////////////////////////////////
+//VARIABLES
+///////////////////////////////////////////////////////
+
+//USED WITH INPUT METHODS
+TENS,  HEX 0            //USED TO CALCULATE TENS DIGIT FOR INPUT IN HEX
+INPUT,  HEX 0           //VALUE OF INPUT
+
+//USED WITH METHODS TO CALCULATE SUM OF ODDS
+SUM, HEX 0              //SUM OUTPUT
+SUMINC, HEX 1           //CURRENT AMOUNT TO INCREMENT SUM BY
+
+//CONSTANTS
+TWO, HEX 2
+TEN,  HEX A             //USED WITH STEP 2 TO INC BY A
+ASCIITOHEX, HEX -30     //USED TO CONVERT ASCII TO HEX
+HEXTOASCII, HEX 30      //USED TO CONVERT HEX TO ASCII
+DECREMENT,  HEX -1      //USED TO DECREMENT BY ONE
+
+//VARIABLES USED WITH OUTPUT METHODS
+S3, HEX 0               //THOUSANDS DIGIT OF OUTPUT
+S2, HEX 0               //HUNDREDS DIGIT OF OUTPUT
+S1, HEX 0               //TENS DIGIT OF OUTPUT
+S0, HEX 0               //ONES DIGIT OF OUTPUT
+C3, DEC 1000            //USED FOR CALCULATING THOUSANDS DIGIT
+C2, DEC 100             //USED FOR CALCULATING HUNDREDS DIGIT
+C1, DEC 10              //USED FOR CALCULATING TENS DIGIT
+N, HEX 0                //CURRENT SUM OF S3, S2, S1, AND S0
+
+///////////////////////////////////////////////////////
+//METHODS
+///////////////////////////////////////////////////////
+
+//////////////////////////////////////
+//PART 1
+//GET INPUT AND CONVERT TO HEXIDECIMAL
+//AND STORE IN INPUT
+//////////////////////////////////////
+
+//GET FIRST DIGIT
+STEP1, SKI
+       BUN STEP1
+       INP 0
+       ADD ASCIITOHEX   //CONVERT TO H-DECIMAL
+       SZA
+       BUN STEP2
+       BUN STEP3
+
+//INCREMENT BY 10 FOR EACH 10s DIGIT
+STEP2, STA TENS
+       LDA INPUT
+       ADD TEN
+       STA INPUT
+       LDA TENS
+       ADD DECREMENT
+       SZA       
+       BUN STEP2
+       BUN STEP3
+
+//ADD 1s DIGIT TO INPUT VARIABLE
+STEP3, SKI
+       BUN STEP3
+       INP 0
+       ADD ASCIITOHEX           //CONVERT TO H-DECIMAL
+       ADD INPUT
+       STA INPUT
+       BUN STEP4
+
+/////////////////////////////////////
+//PART 2
+//GET SUM OF ODD INTEGERS UP TO INPUT
+//AND STORE IN SUM
+/////////////////////////////////////
+
+//CHECK IF SUMINC < INPUT. IF SO, CONTINUE ADDING.
+STEP4, CMA
+       INC           //GET -INPUT
+       ADD SUMINC
+       SPA           //IF SUMINC-INPUT > 0, SKIP NEXT INSTRUCTION
+       BUN STEP5     //IF SUMINC < INPUT
+       BUN STEP6     //IF SUMINC >= INPUT
+
+//INCREMENT SUM BY SUMINC AND SUMINC BY 2
+STEP5, LDA SUM
+       ADD SUMINC
+       STA SUM
+       LDA SUMINC
+       ADD TWO
+       STA SUMINC
+       LDA INPUT
+       BUN STEP4
+
+//ADD SUMINC TO SUM TO GET SOLUTION
+STEP6, LDA SUM
+       ADD SUMINC
+       STA SUM
+       BUN STEP7
+
+//////////////////////////////////////////////////////////
+//PART 3
+//CONVERT SUM INTO DECIMAL DIGITS
+//S3, S2, S1, S0 AND OUTPUT
+//
+//DECIMAL IS OF THE FORM (S3 S2 S1 S0) 
+//WHERE S3 IS THOUSANDS DIGIT, S2 IS HUNDREDS DIGIT, ETC.
+//////////////////////////////////////////////////////////
+
+//BEGIN CALCULATING S3
+STEP7, CMA
+       INC
+       ADD C3
+       SPA
+       BUN STEP8    //IF C3 - SUM IS NOT POSITIVE
+       BUN STEP10
+
+//ADD 1 TO C3 FOR EVERY TIME 1000 CAN BE SUBTRACTED FROM SUM AND SUM STILL BE POSITIVE
+STEP8, LDA S3
+       INC
+       STA S3  //S3++
+       LDA N
+       ADD C3
+       STA N   //N += 1000
+       
+       CMA
+       INC
+       ADD SUM
+       SNA
+       BUN STEP8  //IF SUM - N IS NOT NEGATIVE
+       BUN STEP9  //IF SUM - N IS NEGATIVE
+
+//ADJUST C3, SUM, AND N BY SUBTRACTING ONE ITERATION OF THE LOOP ABOVE FROM EACH
+//C3 IS SOLVED AFTER THIS STEP
+STEP9, LDA S3
+       ADD DECREMENT
+       STA S3         //S3--
+       LDA C3
+       CMA
+       INC
+       STA C3       //C3 = -C3
+       LDA N
+       ADD C3
+       STA N       //N -= 1000
+       BUN STEP10
+
+//BEGIN CALCULATING S2
+STEP10, LDA SUM
+        CMA
+        INC
+        ADD C2
+        SPA
+        BUN STEP11
+        BUN STEP13
+
+//ADD 1 TO C2 FOR EVERY TIME 100 CAN BE SUBTRACTED FROM SUM AND SUM STILL BE POSITIVE
+STEP11, LDA S2
+        INC
+        STA S2 //S2++
+        LDA N
+        ADD C2
+        STA N   //N+= 100
+
+        CMA
+        INC
+        ADD SUM
+        SNA
+        BUN STEP11
+        BUN STEP12
+
+//ADJUST C2, SUM, AND N BY SUBTRACTING ONE ITERATION OF THE LOOP ABOVE FROM EACH
+//C2 IS SOLVED AFTER THIS STEP
+STEP12, LDA S2
+        ADD DECREMENT
+        STA S2       //S2 --
+        LDA C2
+        CMA
+        INC
+        STA C2   //C2 = -C2
+        LDA N
+        ADD C2
+        STA N      //N -= 100
+        BUN STEP13
+
+//BEGIN CALCULATING S1
+STEP13, LDA S2
+        LDA SUM
+        CMA
+        INC
+        ADD C1
+        SPA
+        BUN STEP14
+        BUN STEP16
+
+//ADD 1 TO C2 FOR EVERY TIME 10 CAN BE SUBTRACTED FROM SUM AND SUM STILL BE POSITIVE
+STEP14, LDA S1
+        INC
+        STA S1  //S1++
+        LDA N
+        ADD C1
+        STA N   //N += 10
+
+        CMA
+        INC
+        ADD SUM
+        SNA
+        BUN STEP14
+        BUN STEP15
+
+//ADJUST C1, SUM, AND N BY SUBTRACTING ONE ITERATION OF THE LOOP ABOVE FROM EACH
+//C1 IS SOLVED AFTER THIS STEP
+STEP15, LDA S1
+        ADD DECREMENT
+        STA S1
+        LDA C1
+        CMA
+        INC
+        STA C1
+        LDA N
+        ADD C1
+        STA N
+        BUN STEP16
+
+//CALCULATE S0
+STEP16, LDA N
+        CMA
+        INC
+        ADD SUM
+        STA S0
+        BUN STEP17
+
+///////////////////////////////
+//PART 4
+//OUTPUT S3 S2 S1 AND S0 DIGITS
+///////////////////////////////
+
+//OUTPUT S3
+STEP17, SKO
+        BUN STEP17
+        LDA S3
+        ADD HEXTOASCII
+        OUT
+        BUN STEP18
+
+//OUTPUT S2
+STEP18, SKO
+        BUN STEP18
+        LDA S2
+        ADD HEXTOASCII
+        OUT
+        BUN STEP19
+
+//OUTPUT S1
+STEP19, SKO
+        BUN STEP19
+        LDA S1
+        ADD HEXTOASCII
+        OUT
+        BUN STEP20
+
+//OUTPUT S0
+STEP20, SKO
+        BUN STEP20
+        LDA S0
+        ADD HEXTOASCII
+        OUT
+        HLT
+END
+
